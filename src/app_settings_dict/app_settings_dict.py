@@ -61,6 +61,12 @@ class Settings(DefaultsDict):
         for key, item in self.data.items():
             self.default_settings[key] = item
 
+    def update(self, dict_: Any = None, **kwargs: Any) -> None:
+        """Updates the settings dictionary with new items."""
+        if dict_ is not None:
+            self.data.update(dict_)
+        self.data.update(kwargs)
+
     def empty(self) -> None:
         """Empties the settings dictionary."""
         self.data.clear()

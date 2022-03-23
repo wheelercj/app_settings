@@ -57,7 +57,7 @@ def test_default_settings() -> None:
 
 
 def test_load_without_file() -> None:
-    def sample_prompt_function() -> dict:
+    def sample_prompt_function(dict_: dict) -> dict:
         # s = input("Enter the settings: ")
         return {"key1": "a", "key2": "b"}
 
@@ -166,6 +166,26 @@ def test_changing_settings_before_load() -> None:
     settings["key1"] = "a"
     settings.load(fallback_option="default settings")
     assert settings["key1"] == "a"
+
+
+def test_update() -> None:
+    settings = Settings(
+        settings_file_path="sample settings file name.json",
+        default_factories={
+            "key1": lambda: "value1",
+        },
+        default_settings={
+            "key1": [],
+        },
+        dict_={
+            "key1": "hello",
+        },
+    )
+    assert settings["key1"] == "hello"
+    settings.update({"key1": "a"})
+    assert settings["key1"] == "a"
+    settings.update(key2="b")
+    assert settings["key2"] == "b"
 
 
 def test_Settings__is_using_json() -> None:
