@@ -93,10 +93,11 @@ class Settings(DefaultsDict):
     ) -> None:
         """Loads the user's settings from a file.
 
-        The settings are retrieved from settings.json if the file exists and is
-        not empty. Otherwise, they are retrieved directly from the user via a
-        settings menu or from default settings in the code depending on the
-        chosen fallback option.
+        The settings are retrieved from the settings file if the file exists
+        and is not empty. Otherwise, they are retrieved directly from the user
+        via a settings menu or from default settings in the code depending on
+        the chosen fallback option. Any settings in the settings file whose
+        keys are not in any of the dictionaries in Settings are ignored.
 
         Parameters
         ----------
@@ -128,12 +129,19 @@ class Settings(DefaultsDict):
                     loaded_settings = yaml.load(file, Loader=yaml.FullLoader)
             if not loaded_settings:
                 raise FileNotFoundError
-            if overwrite_existing_settings:
-                self.data.update(loaded_settings)
-            else:
-                for key, value in loaded_settings.items():
-                    if key not in self.data:
-                        self.data[key] = value
+            for key, value in loaded_settings.items():
+                if (
+                    key in self.data
+                    and overwrite_existing_settings
+                    or (
+                        key not in self.data
+                        and (
+                            key in self.default_settings
+                            or key in self.default_factories
+                        )
+                    )
+                ):
+                    self.data[key] = value
         except (FileNotFoundError, json.JSONDecodeError, yaml.YAMLError):
             print("Unable to load the settings.")
             if fallback_option == "default settings":
