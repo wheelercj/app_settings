@@ -132,11 +132,17 @@ class Settings(DefaultsDict):
                 for key, value in self.default_settings.items():
                     if key not in self.data:
                         self.data[key] = value
-            elif self.prompt_user_for_all_settings and fallback_option == "prompt user":
+            elif fallback_option == "prompt user":
+                if self.prompt_user_for_all_settings is None:
+                    raise ValueError(
+                        "A function for prompting the user for settings was "
+                        "not given upon class initialization."
+                    )
                 self.data.update(self.prompt_user_for_all_settings())
             else:
                 raise ValueError(
-                    f"fallback_option must be either 'default settings' or 'prompt user', not '{fallback_option}'"
+                    "fallback_option must be either 'default settings' or "
+                    f"'prompt user', not '{fallback_option}'"
                 )
 
     def __is_using_json(self) -> bool:
