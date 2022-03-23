@@ -14,7 +14,7 @@ class Settings(DefaultsDict):
     def __init__(
         self,
         settings_file_path: str,
-        prompt_user_for_all_settings: Callable[[], dict] = None,
+        prompt_user_for_all_settings: Callable[[dict], dict] = None,
         default_factories: Dict[Any, Callable[[], Any]] = None,
         default_settings: Dict[Any, Any] = None,
         dict_: dict = None,
@@ -27,9 +27,10 @@ class Settings(DefaultsDict):
         settings_file_path : str
             The absolute path to the settings file. Can be either a JSON or a
             YAML file.
-        prompt_user_for_all_settings : Callable[[], dict], None
+        prompt_user_for_all_settings : Callable[[dict], dict], None
             A function that prompts the user to enter settings and returns
-            them.
+            them. The argument is the current settings as a standard Python
+            dictionary.
         default_factories : Dict[Any, Callable[[], Any]], None
             The dictionary of functions to call if keys are missing. Each of
             these functions must return the value for the given key (not the
@@ -147,7 +148,7 @@ class Settings(DefaultsDict):
                         "A function for prompting the user for settings was "
                         "not given upon class initialization."
                     )
-                self.data.update(self.prompt_user_for_all_settings())
+                self.data.update(self.prompt_user_for_all_settings(self.data))
             else:
                 raise ValueError(
                     "fallback_option must be either 'default settings' or "
