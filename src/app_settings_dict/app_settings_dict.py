@@ -14,7 +14,7 @@ class Settings(DefaultsDict):
     def __init__(
         self,
         settings_file_path: str,
-        prompt_user_for_all_settings: Callable[[dict], dict] = None,
+        prompt_user_for_all_settings: Callable[["Settings"], "Settings"] = None,
         default_factories: Dict[Any, Callable[[], Any]] = None,
         default_settings: Dict[Any, Any] = None,
         dict_: dict = None,
@@ -27,10 +27,9 @@ class Settings(DefaultsDict):
         settings_file_path : str
             The absolute path to the settings file. Can be either a JSON or a
             YAML file.
-        prompt_user_for_all_settings : Callable[[dict], dict], None
+        prompt_user_for_all_settings : Callable[[Settings], Settings], None
             A function that prompts the user to enter settings and returns
-            them. The argument is the current settings as a standard Python
-            dictionary.
+            them. The argument is the current settings.
         default_factories : Dict[Any, Callable[[], Any]], None
             The dictionary of functions to call if keys are missing. Each of
             these functions must return the value for the given key (not the
@@ -60,16 +59,6 @@ class Settings(DefaultsDict):
         self.default_settings = default_settings
         for key, item in self.data.items():
             self.default_settings[key] = item
-
-    def update(self, dict_: Any = None, **kwargs: Any) -> None:
-        """Updates the settings dictionary with new items."""
-        if dict_ is not None:
-            self.data.update(dict_)
-        self.data.update(kwargs)
-
-    def empty(self) -> None:
-        """Empties the settings dictionary."""
-        self.data.clear()
 
     def reset(self, key: Any) -> None:
         """Resets a setting to its default value.
@@ -154,7 +143,7 @@ class Settings(DefaultsDict):
                         "A function for prompting the user for settings was "
                         "not given upon class initialization."
                     )
-                self.data.update(self.prompt_user_for_all_settings(self.data))
+                self = self.prompt_user_for_all_settings(self)
             else:
                 raise ValueError(
                     "fallback_option must be either 'default settings' or "

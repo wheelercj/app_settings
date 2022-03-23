@@ -57,9 +57,9 @@ def test_default_settings() -> None:
 
 
 def test_load_without_file() -> None:
-    def sample_prompt_function(dict_: dict) -> dict:
+    def sample_prompt_function(dict_: Settings) -> Settings:
         # s = input("Enter the settings: ")
-        return {"key1": "a", "key2": "b"}
+        return dict_.update({"key1": "a", "key2": "b"})
 
     settings = Settings(
         settings_file_path="not a real file.yaml",
@@ -92,7 +92,7 @@ def test_load_without_file() -> None:
     assert settings["key2"] == "b"
     assert settings["key3"] == "value3"
     assert settings["key4"] == "value4"
-    settings.empty()
+    settings.clear()
     settings.load(fallback_option="default settings")
     assert settings["key1"] == "hello"
     assert settings["key2"] == "world"
@@ -117,7 +117,7 @@ def test_load_after_empty() -> None:
         },
     )
     assert settings["key1"] == "hello"
-    settings.empty()
+    settings.clear()
     assert settings["key1"] == "value1"
 
 
