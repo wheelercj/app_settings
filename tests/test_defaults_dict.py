@@ -4,7 +4,7 @@ from app_settings_dict.defaults_dict import DefaultsDict
 
 def test_simple_items() -> None:
     default_values = {"key1": "hello", "key2": "world"}
-    defaults_dict = DefaultsDict(dict_=default_values)
+    defaults_dict = DefaultsDict(data=default_values)
     assert defaults_dict["key1"] == "hello"
     assert defaults_dict["key2"] == "world"
 
