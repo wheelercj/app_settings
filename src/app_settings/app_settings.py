@@ -1,5 +1,6 @@
 import platform
-if int(platform.python_version().split('.')[1]) < 8:
+
+if int(platform.python_version().split(".")[1]) < 8:
     from typing_extensions import Literal  # https://pypi.org/project/typing-extensions/
 else:
     from typing import Literal
@@ -17,7 +18,7 @@ class Settings(DefaultsDict):
         default_factories: Dict[Any, Callable[[], Any]] = None,
         default_settings: Dict[Any, Any] = None,
         dict_: dict = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Initializes the settings.
 
@@ -30,7 +31,9 @@ class Settings(DefaultsDict):
             A function that prompts the user to enter settings and returns
             them.
         default_factories : Dict[Any, Callable[[], Any]], None
-            The dictionary of functions to call if keys are missing.
+            The dictionary of functions to call if keys are missing. Each of
+            these functions must return the value for the given key (not the
+            setting dictionary item).
         default_settings : Dict[Any, Any], None
             The dictionary of default settings that do NOT initialize the
             dictionary, but instead are used by the reset method if and when a
@@ -57,6 +60,10 @@ class Settings(DefaultsDict):
         for key, item in self.data.items():
             self.default_settings[key] = item
 
+    def empty(self) -> None:
+        """Empties the settings dictionary."""
+        self.data.clear()
+
     def reset(self, key: Any) -> None:
         """Resets a setting to its default value.
 
@@ -68,6 +75,10 @@ class Settings(DefaultsDict):
         """Resets all settings with default values to their default values."""
         for key in self.default_settings:
             self.reset(key)
+
+    def prompt(self, key: Any) -> None:
+        """Calls the default factory for a setting."""
+        self.data[key] = self.default_factories[key]()
 
     def save(self) -> None:
         """Saves the settings to the settings file."""
@@ -96,7 +107,9 @@ class Settings(DefaultsDict):
             Whether to fall back to default settings or prompting the user to
             enter settings if the settings don't exist yet. The user can only
             be prompted to enter settings if a function for that was given upon
-            class initialization.
+            class initialization. If the fallback to default settings is used,
+            only default settings that do not overwrite any current settings
+            are used.
 
         Raises
         ------
@@ -113,13 +126,18 @@ class Settings(DefaultsDict):
                 raise FileNotFoundError
             self.data.update(loaded_settings)
         except (FileNotFoundError, json.JSONDecodeError, yaml.YAMLError):
+            print("Unable to load the settings.")
             if fallback_option == "default settings":
-                print("Unable to load the settings. Using default settings.")
-                self.data.update(self.default_settings)
+                print("Using default settings.")
+                for key, value in self.default_settings.items():
+                    if key not in self.data:
+                        self.data[key] = value
             elif self.prompt_user_for_all_settings and fallback_option == "prompt user":
                 self.data.update(self.prompt_user_for_all_settings())
             else:
-                raise ValueError(f"fallback_option must be either 'default settings' or 'prompt user', not '{fallback_option}'")
+                raise ValueError(
+                    f"fallback_option must be either 'default settings' or 'prompt user', not '{fallback_option}'"
+                )
 
     def __is_using_json(self) -> bool:
         """Returns whether the settings file is a JSON file."""
