@@ -17,7 +17,7 @@ class Settings(DefaultsDict):
         prompt_user_for_all_settings: Callable[["Settings"], "Settings"] = None,
         default_factories: Dict[Any, Callable[[], Any]] = None,
         default_settings: Dict[Any, Any] = None,
-        dict_: dict = None,
+        data: Any = None,
         **kwargs: Any,
     ) -> None:
         """Initializes the settings.
@@ -43,9 +43,9 @@ class Settings(DefaultsDict):
             saved for a key that is in default_factories. If a default setting
             and a default factory but not a starting item are provided for a
             key, the default factory is called.
-        dict_ : dict, None
-            The dictionary to initialize with. These items are saved in both
-            the default_settings and the data dictionary.
+        data : Any, None
+            The dictionary or iterable of pairs to initialize with. These items
+            are saved in both the default settings and in the data attribute.
         kwargs : Any
             The keyword arguments to initialize the dictionary with. These
             items are saved in both the default_settings and the data
@@ -53,7 +53,7 @@ class Settings(DefaultsDict):
         """
         self.settings_file_path = settings_file_path
         self.prompt_user_for_all_settings = prompt_user_for_all_settings
-        super().__init__(default_factories, dict_, **kwargs)
+        super().__init__(default_factories, data, **kwargs)
         if default_settings is None:
             default_settings = {}
         self.default_settings = default_settings

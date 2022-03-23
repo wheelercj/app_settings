@@ -9,7 +9,7 @@ def test_simple_settings() -> None:
         default_factories={
             "key1": lambda: "value1",
         },
-        dict_={
+        data={
             "key1": "hello",
             "key2": "world",
         },
@@ -36,7 +36,7 @@ def test_default_settings() -> None:
         default_settings={
             "key3": [],
         },
-        dict_={
+        data={
             "key1": "hello",
             "key2": "world",
         },
@@ -57,9 +57,9 @@ def test_default_settings() -> None:
 
 
 def test_load_without_file() -> None:
-    def sample_prompt_function(dict_: Settings) -> Settings:
+    def sample_prompt_function(settings: Settings) -> Settings:
         # s = input("Enter the settings: ")
-        return dict_.update({"key1": "a", "key2": "b"})
+        return settings.update({"key1": "a", "key2": "b"})
 
     settings = Settings(
         settings_file_path="not a real file.yaml",
@@ -73,7 +73,7 @@ def test_load_without_file() -> None:
             "key3": [],
             "key4": "value4",
         },
-        dict_={
+        data={
             "key1": "hello",
             "key2": "world",
         },
@@ -112,7 +112,7 @@ def test_load_after_empty() -> None:
         default_settings={
             "key1": [],
         },
-        dict_={
+        data={
             "key1": "hello",
         },
     )
@@ -137,7 +137,7 @@ def test_prompt() -> None:
         default_settings={
             "key3": [],
         },
-        dict_={
+        data={
             "key1": "hello",
             "key2": "world",
         },
@@ -156,7 +156,7 @@ def test_changing_settings_before_load() -> None:
         default_settings={
             "key1": [],
         },
-        dict_={
+        data={
             "key1": "hello",
         },
     )
@@ -177,7 +177,7 @@ def test_update() -> None:
         default_settings={
             "key1": [],
         },
-        dict_={
+        data={
             "key1": "hello",
         },
     )
@@ -194,7 +194,7 @@ def test_Settings__is_using_json() -> None:
         default_factories={
             "key1": lambda: "value1",
         },
-        dict_={
+        data={
             "key1": "hello",
             "key2": "world",
         },
