@@ -1,0 +1,1 @@
+from app_settings_dict.app_settings_dict import Settings

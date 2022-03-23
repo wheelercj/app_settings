@@ -1,5 +1,5 @@
 import pytest
-from app_settings.app_settings import Settings
+from app_settings_dict import Settings
 
 
 def test_simple_settings() -> None:

@@ -7,7 +7,7 @@ else:
 from typing import Dict, Callable, Any
 import json
 import yaml  # https://pypi.org/project/PyYAML/
-from app_settings.defaults_dict import DefaultsDict
+from app_settings_dict.defaults_dict import DefaultsDict
 
 
 class Settings(DefaultsDict):
