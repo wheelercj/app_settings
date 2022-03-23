@@ -1,4 +1,9 @@
-from typing import Dict, Literal, Callable, Any
+import platform
+if int(platform.python_version().split('.')[1]) < 8:
+    from typing_extensions import Literal  # https://pypi.org/project/typing-extensions/
+else:
+    from typing import Literal
+from typing import Dict, Callable, Any
 import json
 import yaml  # https://pypi.org/project/PyYAML/
 from app_settings.defaults_dict import DefaultsDict
