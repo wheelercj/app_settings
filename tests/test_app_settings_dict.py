@@ -184,7 +184,7 @@ def test_update() -> None:
     assert settings["key1"] == "hello"
     settings.update({"key1": "a"})
     assert settings["key1"] == "a"
-    settings.update(key2="b")
+    settings.update({"key2": "b"})
     assert settings["key2"] == "b"
 
 

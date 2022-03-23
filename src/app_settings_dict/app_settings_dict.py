@@ -17,8 +17,8 @@ class Settings(DefaultsDict):
         prompt_user_for_all_settings: Callable[["Settings"], "Settings"] = None,
         default_factories: Dict[Any, Callable[[], Any]] = None,
         default_settings: Dict[Any, Any] = None,
-        data: Any = None,
-        **kwargs: Any,
+        data: dict = None,
+        prevent_new_settings: bool = True,
     ) -> None:
         """Initializes the settings.
 
@@ -36,29 +36,47 @@ class Settings(DefaultsDict):
             setting dictionary item).
         default_settings : Dict[Any, Any], None
             The dictionary of default settings that do NOT initialize the
-            dictionary, but instead are used by the reset method if and when a
-            setting should be reset to its default. All items this class is
-            initialized with are also saved in the default_settings dictionary,
-            so default_settings is only helpful if a default setting should be
-            saved for a key that is in default_factories. If a default setting
+            dictionary, but instead are used by a reset method if and when a
+            setting should be reset to its default. The data this class is
+            initialized with is also saved in the default_settings dictionary,
+            so default_settings is usually only used when either the ``reset``
+            method or the ``reset_all`` method is called. If a default setting
             and a default factory but not a starting item are provided for a
             key, the default factory is called.
-        data : Any, None
-            The dictionary or iterable of pairs to initialize with. These items
-            are saved in both the default settings and in the data attribute.
-        kwargs : Any
-            The keyword arguments to initialize the dictionary with. These
-            items are saved in both the default_settings and the data
-            dictionary.
+        data : dict, None
+            The dictionary to initialize with. These items are saved in both
+            the default settings and in the data attribute without overwriting
+            any existing default settings.
+        prevent_new_settings : bool
+            Whether or not to prevent new settings from being added to the
+            settings dictionary after this class' initialization.
         """
         self.settings_file_path = settings_file_path
         self.prompt_user_for_all_settings = prompt_user_for_all_settings
-        super().__init__(default_factories, data, **kwargs)
-        if default_settings is None:
-            default_settings = {}
-        self.default_settings = default_settings
-        for key, item in self.data.items():
-            self.default_settings[key] = item
+        self.prevent_new_settings = prevent_new_settings
+        self.data = data or {}
+        self.default_factories = default_factories or {}
+        self.default_settings = default_settings or {}
+        for key, value in self.data.items():
+            if key not in self.default_settings:
+                self.default_settings[key] = value
+
+    def __setitem__(self, key: Any, item: Any) -> None:
+        if self.prevent_new_settings and key not in self.data:
+            raise KeyError(f'"{key}" is not a valid setting. You can set '
+            "prevent_new_settings to False in the Settings constructor call "
+            "to allow new settings to be created after initialization.")
+        super().__setitem__(key, item)
+
+    def update(self, data: dict) -> None:
+        """Updates the settings with the given dictionary.
+        
+        This update method cannot receive keyword arguments like the normal
+        dict update method can because the normal update method uses
+        ``self[key] = other[key]``, which can raise KeyError from this class's
+        ``__setitem__`` method at times when it shouldn't.
+        """
+        self.data.update(data)
 
     def reset(self, key: Any) -> None:
         """Resets a setting to its default value.
