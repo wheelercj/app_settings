@@ -109,7 +109,11 @@ class Settings(DefaultsDict):
             are used.
         overwrite_existing_settings : bool
             Whether to overwrite existing settings with the settings from the
-            settings file.
+            settings file. This option is ignored if a fallback option is used;
+            using default settings never overwrites existing settings (only
+            adding new ones that don't yet exist), and prompting the user to
+            enter settings always overwrites existing settings (without
+            deleting any that are not overwritten).
 
         Raises
         ------
