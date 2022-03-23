@@ -93,6 +93,7 @@ class Settings(DefaultsDict):
         fallback_option: Literal[
             "default settings", "prompt user"
         ] = "default settings",
+        overwrite_existing_settings: bool = True,
     ) -> None:
         """Loads the user's settings from a file.
 
@@ -110,6 +111,9 @@ class Settings(DefaultsDict):
             class initialization. If the fallback to default settings is used,
             only default settings that do not overwrite any current settings
             are used.
+        overwrite_existing_settings : bool
+            Whether to overwrite existing settings with the settings from the
+            settings file.
 
         Raises
         ------
@@ -124,7 +128,12 @@ class Settings(DefaultsDict):
                     loaded_settings = yaml.load(file, Loader=yaml.FullLoader)
             if not loaded_settings:
                 raise FileNotFoundError
-            self.data.update(loaded_settings)
+            if overwrite_existing_settings:
+                self.data.update(loaded_settings)
+            else:
+                for key, value in loaded_settings.items():
+                    if key not in self.data:
+                        self.data[key] = value
         except (FileNotFoundError, json.JSONDecodeError, yaml.YAMLError):
             print("Unable to load the settings.")
             if fallback_option == "default settings":
