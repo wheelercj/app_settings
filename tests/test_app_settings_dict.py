@@ -1,4 +1,5 @@
 import pytest
+from typing import Any
 from app_settings_dict import Settings
 
 
@@ -121,7 +122,7 @@ def test_load_after_empty() -> None:
 
 
 def test_prompt() -> None:
-    def sample_prompt_function() -> dict:
+    def sample_prompt_function() -> Any:
         # s = input("Enter a setting: ")
         return "a"
 

@@ -34,6 +34,6 @@ class DefaultsDict(UserDict):
         self.default_factories = default_factories
         super().__init__(dict_, **kwargs)
 
-    def __missing__(self, key: str) -> None:
+    def __missing__(self, key: str) -> Any:
         self.data[key] = self.default_factories[key]()
         return self.data[key]
