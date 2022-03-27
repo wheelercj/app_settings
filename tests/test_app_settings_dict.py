@@ -310,3 +310,27 @@ def test_nested_Settings() -> None:
             },
         },
     }
+
+
+def test_creating_setting_after_init() -> None:
+    settings = Settings(
+        settings_file_path="sample_settings_file_name.json",
+        default_settings={
+            "key1": [],
+            "key2": "value2",
+        },
+    )
+    with pytest.raises(KeyError):
+        settings["key3"] = "value3"
+
+
+def test_prompt_error() -> None:
+    settings = Settings(
+        settings_file_path="nonexistent file.json",
+        default_settings={
+            "key1": [],
+            "key2": "value2",
+        },
+    )
+    with pytest.raises(ValueError):
+        settings.load(fallback_option="prompt user")

@@ -1,6 +1,5 @@
-import platform
-
-if int(platform.python_version().split(".")[1]) < 8:
+import sys
+if sys.version_info < (3, 8):
     from typing_extensions import Literal  # https://pypi.org/project/typing-extensions/
 else:
     from typing import Literal
