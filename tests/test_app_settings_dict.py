@@ -202,3 +202,111 @@ def test_Settings__is_using_json() -> None:
     assert settings._Settings__is_using_json()
     settings.settings_file_path = "sample_settings_file_name.yaml"
     assert not settings._Settings__is_using_json()
+
+
+def test_load_from_dict() -> None:
+    settings = Settings()
+    with pytest.raises(ValueError):
+        settings.load_from_dict({"key1": "a", "key2": "b"})
+    settings = settings.load_from_dict(
+        {
+            "is_app_settings_dict": True,
+            "data": {
+                "key1": "hello",
+                "key2": "world",
+            },
+            "default_settings": {
+                "key1": [],
+                "key2": "value2",
+            },
+        }
+    )
+    assert settings.data["key1"] == "hello"
+    assert settings.data["key2"] == "world"
+
+
+def test_dump_to_dict() -> None:
+    settings = Settings(
+        settings_file_path="sample_settings_file_name.json",
+        data={
+            "key1": "hello",
+            "key2": "world",
+        },
+    )
+    assert settings.dump_to_dict() == {
+        "is_app_settings_dict": True,
+        "default_settings": {
+            "key1": "hello",
+            "key2": "world",
+        },
+        "data": {
+            "key1": "hello",
+            "key2": "world",
+        },
+    }
+
+
+def test_nested_Settings() -> None:
+    settings = Settings(
+        settings_file_path="sample_settings_file_name.json",
+        default_settings={
+            "key6": [],
+            "key7": Settings(
+                data={
+                    "key8": "value8",
+                }
+            ),
+        },
+        data={
+            "key1": "hello",
+            "key2": "world",
+            "key3": "value3",
+            "key4": Settings(
+                settings_file_path="why would anyone want an inner file though.yaml",
+                data={
+                    "key5": "value5",
+                },
+            ),
+        },
+    )
+    assert settings.dump_to_dict() == {
+        "is_app_settings_dict": True,
+        "default_settings": {
+            "key1": "hello",
+            "key2": "world",
+            "key3": "value3",
+            "key4": {
+                "is_app_settings_dict": True,
+                "default_settings": {
+                    "key5": "value5",
+                },
+                "data": {
+                    "key5": "value5",
+                },
+            },
+            "key6": [],
+            "key7": {
+                "is_app_settings_dict": True,
+                "default_settings": {
+                    "key8": "value8",
+                },
+                "data": {
+                    "key8": "value8",
+                },
+            },
+        },
+        "data": {
+            "key1": "hello",
+            "key2": "world",
+            "key3": "value3",
+            "key4": {
+                "is_app_settings_dict": True,
+                "default_settings": {
+                    "key5": "value5",
+                },
+                "data": {
+                    "key5": "value5",
+                },
+            },
+        },
+    }
