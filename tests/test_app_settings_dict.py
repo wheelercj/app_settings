@@ -1,4 +1,5 @@
 import pytest
+import re
 from typing import Any
 from app_settings_dict import Settings
 
@@ -334,3 +335,23 @@ def test_prompt_error() -> None:
     )
     with pytest.raises(ValueError):
         settings.load(fallback_option="prompt user")
+
+
+def test_setting_loader_and_dumper() -> None:
+    settings = Settings(
+        settings_file_path="nonexistent file.json",
+        setting_loader=re.compile,
+        setting_dumper=lambda x: x.pattern,
+        data={
+            "phone number pattern": re.compile(r"\d{3}-?\d{3}-?\d{4}"),
+            "email address pattern": re.compile(r"[\w\d.+-]+@[\w\d.-]+\.[\w\d]+"),
+        },
+    )
+    settings._Settings__call_setting_dumper()
+    assert settings["phone number pattern"] == r"\d{3}-?\d{3}-?\d{4}"
+    assert settings["email address pattern"] == r"[\w\d.+-]+@[\w\d.-]+\.[\w\d]+"
+    settings._Settings__call_setting_loader()
+    assert settings["phone number pattern"] == re.compile(r"\d{3}-?\d{3}-?\d{4}")
+    assert settings["email address pattern"] == re.compile(
+        r"[\w\d.+-]+@[\w\d.-]+\.[\w\d]+"
+    )

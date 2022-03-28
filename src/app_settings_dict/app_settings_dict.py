@@ -18,8 +18,8 @@ class Settings(DefaultsDict):
         default_settings: Dict[Any, Any] = None,
         data: dict = None,
         prevent_new_settings: bool = True,
-        # setting_loader: Callable[[str], Any] = None,
-        # setting_dumper: Callable[[Any], str] = None,
+        setting_loader: Callable[[str], Any] = None,
+        setting_dumper: Callable[[Any], str] = None,
     ) -> None:
         """Initializes the settings.
 
@@ -51,15 +51,17 @@ class Settings(DefaultsDict):
         prevent_new_settings : bool
             Whether or not to prevent new settings from being added to the
             settings dictionary after this class' initialization.
+        setting_loader : Callable[[str], Any], None
+            A function that loads a setting from a string. This function will
+            be called on each and every setting when they are loaded from the
+            settings file, except for settings whose values are Settings
+            objects.
+        setting_dumper : Callable[[Any], str], None
+            A function that dumps a setting to a string. This function will be
+            called on each and every setting when they are saved to the
+            settings file, except for settings whose values are Settings
+            objects.
         """
-        # setting_loader : Callable[[str], Any], None
-        #     A function that loads a setting from a string. This function will
-        #     be called on each and every setting when they are loaded from the
-        #     settings file.
-        # setting_dumper : Callable[[Any], str], None
-        #     A function that dumps a setting to a string. This function will be
-        #     called on each and every setting when they are saved to the
-        #     settings file.
         self.settings_file_path = settings_file_path
         self.prompt_user_for_all_settings = prompt_user_for_all_settings
         self.prevent_new_settings = prevent_new_settings
@@ -67,8 +69,8 @@ class Settings(DefaultsDict):
         self.default_factories = default_factories or {}
         self.default_settings = default_settings or {}
         self.__create_defaults_from_data()
-        # self.setting_loader = setting_loader
-        # self.setting_dumper = setting_dumper
+        self.setting_loader = setting_loader
+        self.setting_dumper = setting_dumper
 
     def __create_defaults_from_data(self) -> None:
         """Creates default settings from the data dictionary."""
@@ -113,6 +115,7 @@ class Settings(DefaultsDict):
 
     def save(self) -> None:
         """Saves the settings to the settings file."""
+        self.__call_setting_dumper()
         dict_ = self.dump_to_dict()
         with open(self.settings_file_path, "w", encoding="utf8") as file:
             if self.__is_using_json():
@@ -125,7 +128,6 @@ class Settings(DefaultsDict):
         fallback_option: Literal[
             "default settings", "prompt user"
         ] = "default settings",
-        overwrite_existing_settings: bool = True,
     ) -> None:
         """Loads the user's settings from a file.
 
@@ -144,13 +146,6 @@ class Settings(DefaultsDict):
             class initialization. If the fallback to default settings is used,
             only default settings that do not overwrite any current settings
             are used.
-        overwrite_existing_settings : bool
-            Whether to overwrite existing settings with the settings from the
-            settings file. This option is ignored if a fallback option is used;
-            using default settings never overwrites existing settings (only
-            adding new ones that don't yet exist), and prompting the user to
-            enter settings always overwrites existing settings (without
-            deleting any that are not overwritten).
 
         Raises
         ------
@@ -186,19 +181,7 @@ class Settings(DefaultsDict):
                 )
         else:
             self = self.load_from_dict(loaded_settings_dict)
-            for key, value in self.data.items():
-                if (
-                    key in self.data
-                    and overwrite_existing_settings
-                    or (
-                        key not in self.data
-                        and (
-                            key in self.default_settings
-                            or key in self.default_factories
-                        )
-                    )
-                ):
-                    self.data[key] = value
+            self.__call_setting_loader()
 
     def dump_to_dict(self) -> dict:
         """Converts part of this Settings object to a normal dictionary.
@@ -254,8 +237,8 @@ class Settings(DefaultsDict):
             data=self.data,
             default_factories=self.default_factories,
             default_settings=self.default_settings,
-            # setting_loader=self.setting_loader,
-            # setting_dumper=self.setting_dumper,
+            setting_loader=self.setting_loader,
+            setting_dumper=self.setting_dumper,
         )
         for key in ("data", "default_settings"):
             for k, v in dict_[key].items():
@@ -263,6 +246,26 @@ class Settings(DefaultsDict):
                     dict_[key][k] = self.load_from_dict(v)
             setattr(settings, key, dict_[key])
         return settings
+
+    def __call_setting_loader(self) -> None:
+        """Calls the setting loader function if one was given."""
+        if self.setting_loader is not None:
+            for key, value in self.data.items():
+                if not isinstance(value, Settings):
+                    self.data[key] = self.setting_loader(value)
+            for key, value in self.default_settings.items():
+                if not isinstance(value, Settings):
+                    self.default_settings[key] = self.setting_loader(value)
+
+    def __call_setting_dumper(self) -> None:
+        """Calls the setting dumper function if one was given."""
+        if self.setting_dumper is not None:
+            for key, value in self.data.items():
+                if not isinstance(value, Settings):
+                    self.data[key] = self.setting_dumper(value)
+            for key, value in self.default_settings.items():
+                if not isinstance(value, Settings):
+                    self.default_settings[key] = self.setting_dumper(value)
 
     def __is_using_json(self) -> bool:
         """Returns whether the settings file is a JSON file."""
