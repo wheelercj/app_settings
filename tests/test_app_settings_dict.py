@@ -355,3 +355,8 @@ def test_setting_loader_and_dumper() -> None:
     assert settings["email address pattern"] == re.compile(
         r"[\w\d.+-]+@[\w\d.-]+\.[\w\d]+"
     )
+
+
+def test_init_without_keywords() -> None:
+    with pytest.raises(TypeError):
+        Settings("sample settings file path.json")

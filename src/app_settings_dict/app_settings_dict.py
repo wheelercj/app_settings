@@ -13,6 +13,7 @@ from app_settings_dict.defaults_dict import DefaultsDict
 class Settings(DefaultsDict):
     def __init__(
         self,
+        *,
         settings_file_path: str = None,
         prompt_user_for_all_settings: Callable[["Settings"], "Settings"] = None,
         default_factories: Dict[Any, Callable[[], Any]] = None,
