@@ -1,4 +1,5 @@
 import sys
+
 if sys.version_info < (3, 8):
     from typing_extensions import Literal  # https://pypi.org/project/typing-extensions/
 else:
@@ -180,7 +181,9 @@ class Settings(DefaultsDict):
                     f"'prompt user', not '{fallback_option}'"
                 )
         else:
-            self = self.load_from_dict(loaded_settings_dict)
+            other = self.load_from_dict(loaded_settings_dict)
+            self.data = other.data
+            self.default_settings = other.default_settings
             self.__call_setting_loader()
 
     def dump_to_dict(self) -> dict:
@@ -244,7 +247,10 @@ class Settings(DefaultsDict):
             for k, v in dict_[key].items():
                 if isinstance(v, dict) and "is_app_settings_dict" in v:
                     dict_[key][k] = self.load_from_dict(v)
-            setattr(settings, key, dict_[key])
+            if key == "data":
+                settings.data.update(dict_[key])
+            else:
+                settings.default_settings.update(dict_[key])
         return settings
 
     def __call_setting_loader(self) -> None:
