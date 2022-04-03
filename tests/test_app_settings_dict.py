@@ -1,6 +1,7 @@
 import pytest
 import re
 from typing import Any
+from dataclasses import dataclass
 from app_settings_dict import Settings
 
 
@@ -207,23 +208,27 @@ def test_Settings__is_using_json() -> None:
 
 def test_load_from_dict() -> None:
     settings = Settings()
-    with pytest.raises(ValueError):
-        settings.load_from_dict({"key1": "a", "key2": "b"})
-    settings = settings.load_from_dict(
+    settings.load_from_dict(
         {
-            "is_app_settings_dict": True,
-            "data": {
-                "key1": "hello",
-                "key2": "world",
-            },
-            "default_settings": {
-                "key1": [],
-                "key2": "value2",
-            },
+            "key1": "hello",
+            "key2": "world",
         }
     )
-    assert settings.data["key1"] == "hello"
-    assert settings.data["key2"] == "world"
+    assert len(settings.data) == 0
+    settings = Settings(
+        data={
+            "key1": "a",
+            "key2": "b",
+        }
+    )
+    settings.load_from_dict(
+        {
+            "key1": "c",
+            "key2": "d",
+        }
+    )
+    assert settings.data["key1"] == "c"
+    assert settings.data["key2"] == "d"
 
 
 def test_dump_to_dict() -> None:
@@ -235,15 +240,8 @@ def test_dump_to_dict() -> None:
         },
     )
     assert settings.dump_to_dict() == {
-        "is_app_settings_dict": True,
-        "default_settings": {
-            "key1": "hello",
-            "key2": "world",
-        },
-        "data": {
-            "key1": "hello",
-            "key2": "world",
-        },
+        "key1": "hello",
+        "key2": "world",
     }
 
 
@@ -271,44 +269,11 @@ def test_nested_Settings() -> None:
         },
     )
     assert settings.dump_to_dict() == {
-        "is_app_settings_dict": True,
-        "default_settings": {
-            "key1": "hello",
-            "key2": "world",
-            "key3": "value3",
-            "key4": {
-                "is_app_settings_dict": True,
-                "default_settings": {
-                    "key5": "value5",
-                },
-                "data": {
-                    "key5": "value5",
-                },
-            },
-            "key6": [],
-            "key7": {
-                "is_app_settings_dict": True,
-                "default_settings": {
-                    "key8": "value8",
-                },
-                "data": {
-                    "key8": "value8",
-                },
-            },
-        },
-        "data": {
-            "key1": "hello",
-            "key2": "world",
-            "key3": "value3",
-            "key4": {
-                "is_app_settings_dict": True,
-                "default_settings": {
-                    "key5": "value5",
-                },
-                "data": {
-                    "key5": "value5",
-                },
-            },
+        "key1": "hello",
+        "key2": "world",
+        "key3": "value3",
+        "key4": {
+            "key5": "value5",
         },
     }
 
@@ -337,22 +302,49 @@ def test_prompt_error() -> None:
         settings.load(fallback_option="prompt user")
 
 
-def test_setting_loader_and_dumper() -> None:
+def test_nested_setting_loaders_and_dumpers() -> None:
+    @dataclass
+    class Coords:
+        x: int
+        y: int
+
+        def __init__(self, x_and_y: tuple[int, int]) -> None:
+            self.x = x_and_y[0]
+            self.y = x_and_y[1]
+
     settings = Settings(
-        settings_file_path="nonexistent file.json",
-        setting_loader=re.compile,
-        setting_dumper=lambda x: x.pattern,
+        setting_loader=Coords,
+        setting_dumper=lambda obj: (obj.x, obj.y),
         data={
-            "phone number pattern": re.compile(r"\d{3}-?\d{3}-?\d{4}"),
-            "email address pattern": re.compile(r"[\w\d.+-]+@[\w\d.-]+\.[\w\d]+"),
+            "location 1": Coords(x_and_y=(1, 2)),
+            "location 2": Coords(x_and_y=(3, 4)),
+            "patterns": Settings(
+                setting_loader=re.compile,
+                setting_dumper=lambda x: x.pattern,
+                data={
+                    "phone number pattern": re.compile(r"\d{3}-?\d{3}-?\d{4}"),
+                    "email address pattern": re.compile(
+                        r"[\w\d.+-]+@[\w\d.-]+\.[\w\d]+"
+                    ),
+                },
+            ),
         },
     )
-    settings._Settings__call_setting_dumper()
-    assert settings["phone number pattern"] == r"\d{3}-?\d{3}-?\d{4}"
-    assert settings["email address pattern"] == r"[\w\d.+-]+@[\w\d.-]+\.[\w\d]+"
-    settings._Settings__call_setting_loader()
-    assert settings["phone number pattern"] == re.compile(r"\d{3}-?\d{3}-?\d{4}")
-    assert settings["email address pattern"] == re.compile(
+    settings_dict = settings.dump_to_dict()
+    assert settings_dict["location 1"] == (1, 2)
+    assert settings_dict["location 2"] == (3, 4)
+    assert settings_dict["patterns"]["phone number pattern"] == r"\d{3}-?\d{3}-?\d{4}"
+    assert (
+        settings_dict["patterns"]["email address pattern"]
+        == r"[\w\d.+-]+@[\w\d.-]+\.[\w\d]+"
+    )
+    settings.load_from_dict(settings_dict)
+    assert settings["location 1"] == Coords(x_and_y=(1, 2))
+    assert settings["location 2"] == Coords(x_and_y=(3, 4))
+    assert settings["patterns"]["phone number pattern"] == re.compile(
+        r"\d{3}-?\d{3}-?\d{4}"
+    )
+    assert settings["patterns"]["email address pattern"] == re.compile(
         r"[\w\d.+-]+@[\w\d.-]+\.[\w\d]+"
     )
 

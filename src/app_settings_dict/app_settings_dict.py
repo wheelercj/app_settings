@@ -117,7 +117,6 @@ class Settings(DefaultsDict):
 
     def save(self) -> None:
         """Saves the settings to the settings file."""
-        self.__call_setting_dumper()
         dict_ = self.dump_to_dict()
         with open(self.settings_file_path, "w", encoding="utf8") as file:
             if self.__is_using_json():
@@ -157,10 +156,10 @@ class Settings(DefaultsDict):
         try:
             with open(self.settings_file_path, "r", encoding="utf8") as file:
                 if self.__is_using_json():
-                    loaded_settings_dict = json.load(file)
+                    settings_dict = json.load(file)
                 else:
-                    loaded_settings_dict = yaml.load(file, Loader=yaml.FullLoader)
-            if not loaded_settings_dict:
+                    settings_dict = yaml.load(file, Loader=yaml.FullLoader)
+            if not settings_dict:
                 raise FileNotFoundError
         except (FileNotFoundError, json.JSONDecodeError, yaml.YAMLError):
             print("Unable to load the settings.")
@@ -182,97 +181,48 @@ class Settings(DefaultsDict):
                     f"'prompt user', not '{fallback_option}'"
                 )
         else:
-            other = self.load_from_dict(loaded_settings_dict)
-            self.data = other.data
-            self.default_settings = other.default_settings
-            self.__call_setting_loader()
+            self.load_from_dict(settings_dict)
 
     def dump_to_dict(self) -> dict:
-        """Converts part of this Settings object to a normal dictionary.
+        """Converts self.data to a normal dictionary.
 
-        Only the data and default_settings attributes will be kept, but they
-        can contain Settings objects that will also be converted to
-        dictionaries recursively matching the same description.
+        Only the items in self.data will be kept, but they can contain Settings
+        objects that will also be recursively converted to dictionaries. If a
+        setting dumper was given upon class initialization, it will be called
+        on each setting except for settings whose values are Settings object.
         """
-        settings_dict = {
-            "is_app_settings_dict": True,
-            "data": self.data,
-            "default_settings": self.default_settings,
-        }
-        for key, value in settings_dict["data"].items():
+        settings_dict = {**self.data}
+        for key, value in settings_dict.items():
             if isinstance(value, Settings):
-                settings_dict["data"][key] = value.dump_to_dict()
-        for key, value in settings_dict["default_settings"].items():
-            if isinstance(value, Settings):
-                settings_dict["default_settings"][key] = value.dump_to_dict()
+                settings_dict[key] = value.dump_to_dict()
+            elif self.setting_dumper is not None:
+                settings_dict[key] = self.setting_dumper(value)
         return settings_dict
 
-    def load_from_dict(self, dict_: dict) -> "Settings":
-        """Converts a normal dictionary with specific keys to a Settings object.
+    def load_from_dict(self, dict_: dict) -> None:
+        """Loads settings into self.data from a normal dictionary.
+
+        If a setting loader was given upon class initialization, it will be
+        called on each and every setting except for settings whose values are
+        Settings objects.
 
         Parameters
         ----------
         dict_ : dict
-            The dictionary to convert. The dictionary must have the keys
-            "is_app_settings_dict", "data", and "default_settings". The values
-            paired with the keys "data" and "default_settings" must be
-            dictionaries, and can contain dictionaries recursively matching the
-            same description.
-
-        Raises
-        ------
-        ValueError
-            If the dictionary does not have the required keys. The value paired
-            with the "is_app_settings_dict" key can be anything.
+            The dictionary to load from. If the dictionary contains any nested
+            dictionaries that are also specified as Settings objects in the
+            settings constructor call, they will also be recursively loaded
+            into the Settings. Items with keys that are not in self.data are
+            ignored.
         """
-        if (
-            "is_app_settings_dict" not in dict_
-            or "data" not in dict_
-            or "default_settings" not in dict_
-        ):
-            raise ValueError(
-                "The dictionary must have the keys 'is_app_settings_dict', "
-                "'data', and 'default_settings'."
-            )
-        settings = Settings(
-            settings_file_path=self.settings_file_path,
-            prompt_user_for_all_settings=self.prompt_user_for_all_settings,
-            prevent_new_settings=self.prevent_new_settings,
-            data=self.data,
-            default_factories=self.default_factories,
-            default_settings=self.default_settings,
-            setting_loader=self.setting_loader,
-            setting_dumper=self.setting_dumper,
-        )
-        for key in ("data", "default_settings"):
-            for k, v in dict_[key].items():
-                if isinstance(v, dict) and "is_app_settings_dict" in v:
-                    dict_[key][k] = self.load_from_dict(v)
-            if key == "data":
-                settings.data.update(dict_[key])
-            else:
-                settings.default_settings.update(dict_[key])
-        return settings
-
-    def __call_setting_loader(self) -> None:
-        """Calls the setting loader function if one was given."""
-        if self.setting_loader is not None:
-            for key, value in self.data.items():
-                if not isinstance(value, Settings):
+        for key, value in dict_.items():
+            if key in self.data:
+                if isinstance(self.data[key], Settings):
+                    self.data[key].load_from_dict(value)
+                elif self.setting_loader is not None:
                     self.data[key] = self.setting_loader(value)
-            for key, value in self.default_settings.items():
-                if not isinstance(value, Settings):
-                    self.default_settings[key] = self.setting_loader(value)
-
-    def __call_setting_dumper(self) -> None:
-        """Calls the setting dumper function if one was given."""
-        if self.setting_dumper is not None:
-            for key, value in self.data.items():
-                if not isinstance(value, Settings):
-                    self.data[key] = self.setting_dumper(value)
-            for key, value in self.default_settings.items():
-                if not isinstance(value, Settings):
-                    self.default_settings[key] = self.setting_dumper(value)
+                else:
+                    self.data[key] = value
 
     def __is_using_json(self) -> bool:
         """Returns whether the settings file is a JSON file."""
