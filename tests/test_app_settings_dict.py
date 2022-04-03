@@ -1,6 +1,6 @@
 import pytest
 import re
-from typing import Any
+from typing import Any, Tuple
 from dataclasses import dataclass
 from app_settings_dict import Settings
 
@@ -308,7 +308,7 @@ def test_nested_setting_loaders_and_dumpers() -> None:
         x: int
         y: int
 
-        def __init__(self, x_and_y: tuple[int, int]) -> None:
+        def __init__(self, x_and_y: Tuple[int, int]) -> None:
             self.x = x_and_y[0]
             self.y = x_and_y[1]
 
