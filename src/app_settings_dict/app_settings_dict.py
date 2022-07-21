@@ -4,10 +4,12 @@ if sys.version_info < (3, 8):
     from typing_extensions import Literal  # https://pypi.org/project/typing-extensions/
 else:
     from typing import Literal
-from typing import Dict, Callable, Any
+from app_settings_dict.defaults_dict import DefaultsDict
+from typing import Any
+from typing import Callable
+from typing import Dict
 import json
 import yaml  # https://pypi.org/project/PyYAML/
-from app_settings_dict.defaults_dict import DefaultsDict
 
 
 class Settings(DefaultsDict):

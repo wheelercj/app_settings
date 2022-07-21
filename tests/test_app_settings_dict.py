@@ -1,8 +1,9 @@
+from app_settings_dict import Settings
+from dataclasses import dataclass
+from typing import Any
+from typing import Tuple
 import pytest
 import re
-from typing import Any, Tuple
-from dataclasses import dataclass
-from app_settings_dict import Settings
 
 
 def test_simple_settings() -> None:

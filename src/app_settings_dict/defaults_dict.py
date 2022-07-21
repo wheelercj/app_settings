@@ -1,5 +1,7 @@
 from collections import UserDict
-from typing import Dict, Callable, Any
+from typing import Any
+from typing import Callable
+from typing import Dict
 
 
 class DefaultsDict(UserDict):

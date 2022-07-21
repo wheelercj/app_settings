@@ -1,5 +1,5 @@
-import pytest
 from app_settings_dict.defaults_dict import DefaultsDict
+import pytest
 
 
 def test_simple_items() -> None:
